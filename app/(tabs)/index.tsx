@@ -1,11 +1,19 @@
 import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
 import { useState } from "react";
 import { Button, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { BarcodeScanningResult } from "expo-camera/build/Camera.types";
+import axios from "axios";
+import { ThemedView } from "@/components/ThemedView";
+import { ThemedText } from "@/components/ThemedText";
+import * as FileSystem from "expo-file-system";
+import { Audio } from "expo-av";
 
 export default function HomeScreen() {
   const [facing, setFacing] = useState<CameraType>("back");
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [cameraEnabled, setCameraEnabled] = useState(false);
+  const [scanned, setScanned] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<any>();
   const [permission, requestPermission] = useCameraPermissions();
 
   if (!permission) {
@@ -29,20 +37,92 @@ export default function HomeScreen() {
     setFacing((current) => (current === "back" ? "front" : "back"));
   }
 
-  const handleBarCodeScanned = ({ data }: BarcodeScanningResult) => {
-    // setScanned(true);
-    // setData(data); // Сохраняем данные из QR-кода
-    alert(`QR Code scanned! Data: ${data}`);
+  const handleBarCodeScanned = async ({
+    type,
+    data,
+  }: {
+    type: string;
+    data: string;
+  }) => {
     setCameraEnabled(false);
+    if (scanned) return; // Если сканирование уже произошло, не выполняем запрос
+    setScanned(true); // Блокируем дальнейшие сканирования
+
+    // Показать сообщение о том, что QR-код отсканирован
+    alert(`QR Code scanned! Data: ${data}`);
+
+    // Выполнить GET-запрос по ссылке
+    try {
+      setLoading(true); // Устанавливаем состояние загрузки
+      const response = await axios.get(data); // Отправляем запрос по URL, полученному из QR-кода
+      console.log("Response:", response.data); // Выводим ответ на консоль
+
+      // Обработка данных
+      setData(response.data); // Пример сохранения данных
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      alert("Failed to fetch data from URL.");
+    } finally {
+      setLoading(false); // Снимаем состояние загрузки после запроса
+    }
   };
 
+  const playAudioFromBase64 = async (base64: string) => {
+    setLoading(true);
+    try {
+      // Создаём временный путь для сохранения аудио файла
+      const fileUri = FileSystem.documentDirectory + "audio.mp3";
+
+      // Сохраняем base64 данные в файл
+      await FileSystem.writeAsStringAsync(fileUri, base64, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      // Загружаем и воспроизводим аудиофайл
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: fileUri },
+        { shouldPlay: true },
+      );
+      setSound(sound);
+
+      // После воспроизведения аудио
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.didJustFinish) {
+          console.log("Audio finished");
+          setSound(null);
+        }
+      });
+    } catch (error) {
+      console.error("Error playing audio:", error);
+      Alert.alert("Error", "Failed to play audio from base64.");
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <View style={styles.container}>
       {!cameraEnabled ? (
         <View>
+          {data ? (
+            <ThemedView>
+              <ThemedText type="title">Title: {data.title}</ThemedText>
+              <ThemedText type="title">Artist: {data.artist}</ThemedText>
+              <ThemedText type="title">Year: {data.year}</ThemedText>
+
+              <Button
+                title={loading ? "Loading..." : "Play Audio"}
+                onPress={() => playAudioFromBase64(data.mp3)}
+                disabled={loading}
+              />
+            </ThemedView>
+          ) : null}
+
           <Button
             title="Сканировать другой QR-код"
-            onPress={() => setCameraEnabled(true)}
+            onPress={() => {
+              setData(null);
+              setCameraEnabled(true);
+            }}
           />
         </View>
       ) : (

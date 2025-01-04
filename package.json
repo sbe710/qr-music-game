@@ -20,6 +20,7 @@
     "@react-navigation/native": "^7.0.14",
     "@typescript-eslint/eslint-plugin": "^8.19.0",
     "@typescript-eslint/parser": "^8.19.0",
+    "axios": "^1.7.9",
     "eslint": "^9.17.0",
     "eslint-config-prettier": "^9.1.0",
     "expo": "~52.0.23",
