@@ -155,20 +155,23 @@ export default function HomeScreen() {
             <ThemedView style={styles.top}></ThemedView>
             <ThemedView style={styles.center}>
               <ThemedView style={styles.left}></ThemedView>
-              <ThemedView style={styles.qrCamera}></ThemedView>
+              <ThemedView style={styles.qrFrame}>
+                <ThemedView style={styles.qrCornerTopLeft}></ThemedView>
+                <ThemedView style={styles.qrCornerTopRight}></ThemedView>
+                <ThemedView style={styles.qrCornerBottomLeft}></ThemedView>
+                <ThemedView style={styles.qrCornerBottomRight}></ThemedView>
+              </ThemedView>
               <ThemedView style={styles.right}></ThemedView>
             </ThemedView>
             <ThemedView style={styles.bottom}>
               <ThemedView style={styles.buttonContainer}>
-                <TouchableOpacity
-                  style={styles.button}
-                  onPress={toggleCameraFacing}
-                >
-                  <Text style={styles.text}>Flip Camera</Text>
-                </TouchableOpacity>
+                <Button
+                  title={"Переключить камеру"}
+                  onPress={() => toggleCameraFacing()}
+                />
 
                 <Button
-                  title={"Close"}
+                  title={"Закрыть"}
                   onPress={() => setCameraEnabled(false)}
                 />
               </ThemedView>
@@ -215,24 +218,70 @@ const styles = StyleSheet.create({
     display: "flex",
     flexGrow: 1,
     flexShrink: 0,
-    backgroundColor: "red",
   },
   right: {
     flexGrow: 1,
     flexShrink: 0,
-    backgroundColor: "red",
   },
   bottom: {
     flexGrow: 1,
     flexShrink: 0,
     backgroundColor: "rgba(0, 0, 0, 0.6)",
   },
-  qrCamera: {
+  qrFrame: {
     width: FRAME_SIZE,
     height: FRAME_SIZE,
-    borderWidth: 2,
-    borderColor: "#00FF00",
     backgroundColor: "transparent",
+    borderColor: "rgba(255, 255, 255, 0.6)",
+    position: "relative",
+  },
+  qrCornerTopLeft: {
+    position: "absolute",
+    width: 30,
+    height: 30,
+    borderTopWidth: 4,
+    borderLeftWidth: 4,
+    borderColor: "white",
+    top: 0,
+    left: 0,
+    backgroundColor: "transparent",
+    borderRadius: 5,
+  },
+  qrCornerTopRight: {
+    position: "absolute",
+    width: 30,
+    height: 30,
+    borderTopWidth: 4,
+    borderRightWidth: 4,
+    borderColor: "white",
+    top: 0,
+    right: 0,
+    backgroundColor: "transparent",
+    borderRadius: 5,
+  },
+  qrCornerBottomLeft: {
+    position: "absolute",
+    width: 30,
+    height: 30,
+    borderBottomWidth: 4,
+    borderLeftWidth: 4,
+    borderColor: "white",
+    bottom: 0,
+    left: 0,
+    backgroundColor: "transparent",
+    borderRadius: 5,
+  },
+  qrCornerBottomRight: {
+    position: "absolute",
+    width: 30,
+    height: 30,
+    borderBottomWidth: 4,
+    borderRightWidth: 4,
+    borderColor: "white",
+    bottom: 0,
+    right: 0,
+    backgroundColor: "transparent",
+    borderRadius: 5,
   },
   buttonContainer: {
     display: "flex",
