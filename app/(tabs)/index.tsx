@@ -1,11 +1,21 @@
 import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
 import { useState } from "react";
-import { Button, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Button,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  Dimensions,
+} from "react-native";
 import axios from "axios";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import * as FileSystem from "expo-file-system";
 import { Audio } from "expo-av";
+
+const { width } = Dimensions.get("window");
+const FRAME_SIZE = 200; // Размер центральной рамки
 
 export default function HomeScreen() {
   const [facing, setFacing] = useState<CameraType>("back");
@@ -87,6 +97,7 @@ export default function HomeScreen() {
 
       // После воспроизведения аудио
       sound.setOnPlaybackStatusUpdate((status) => {
+        // @ts-ignore
         if (status.didJustFinish) {
           console.log("Audio finished");
           setSound(null);
@@ -94,57 +105,78 @@ export default function HomeScreen() {
       });
     } catch (error) {
       console.error("Error playing audio:", error);
-      Alert.alert("Error", "Failed to play audio from base64.");
+      alert("Failed to play audio from base64.");
     } finally {
       setLoading(false);
     }
   };
   return (
-    <View style={styles.container}>
+    <ThemedView style={styles.container}>
       {!cameraEnabled ? (
-        <View>
+        <ThemedView>
           {data ? (
             <ThemedView>
               <ThemedText type="title">Title: {data.title}</ThemedText>
               <ThemedText type="title">Artist: {data.artist}</ThemedText>
               <ThemedText type="title">Year: {data.year}</ThemedText>
 
-              <Button
-                title={loading ? "Loading..." : "Play Audio"}
-                onPress={() => playAudioFromBase64(data.mp3)}
-                disabled={loading}
-              />
+              <ThemedView>
+                <Button
+                  title={loading ? "Loading..." : "Play Audio"}
+                  onPress={() => playAudioFromBase64(data.mp3)}
+                  disabled={loading}
+                />
+              </ThemedView>
             </ThemedView>
           ) : null}
 
-          <Button
-            title="Сканировать другой QR-код"
-            onPress={() => {
-              setData(null);
-              setCameraEnabled(true);
-            }}
-          />
-        </View>
+          <ThemedView>
+            <Button
+              title="Сканировать QR-код"
+              onPress={() => {
+                setData(null);
+                setCameraEnabled(true);
+              }}
+              color={"#7F00FF"}
+            />
+          </ThemedView>
+        </ThemedView>
       ) : (
         <CameraView
           style={styles.camera}
           facing={facing}
           onBarcodeScanned={handleBarCodeScanned}
+          ratio={"1:1"}
           barcodeScannerSettings={{
             barcodeTypes: ["qr"],
           }}
         >
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={styles.button}
-              onPress={toggleCameraFacing}
-            >
-              <Text style={styles.text}>Flip Camera</Text>
-            </TouchableOpacity>
-          </View>
+          <ThemedView style={styles.innerCamera}>
+            <ThemedView style={styles.top}></ThemedView>
+            <ThemedView style={styles.center}>
+              <ThemedView style={styles.left}></ThemedView>
+              <ThemedView style={styles.qrCamera}></ThemedView>
+              <ThemedView style={styles.right}></ThemedView>
+            </ThemedView>
+            <ThemedView style={styles.bottom}>
+              <ThemedView style={styles.buttonContainer}>
+                <TouchableOpacity
+                  style={styles.button}
+                  onPress={toggleCameraFacing}
+                >
+                  <Text style={styles.text}>Flip Camera</Text>
+                </TouchableOpacity>
+
+                <Button
+                  title={"Close"}
+                  onPress={() => setCameraEnabled(false)}
+                />
+              </ThemedView>
+            </ThemedView>
+          </ThemedView>
         </CameraView>
       )}
-    </View>
+    </ThemedView>
   );
 }
 
@@ -160,88 +192,59 @@ const styles = StyleSheet.create({
   camera: {
     flex: 1,
   },
-  buttonContainer: {
+  innerCamera: {
     flex: 1,
-    flexDirection: "row",
+    height: "100%",
     backgroundColor: "transparent",
-    margin: 64,
   },
-  button: {
-    flex: 1,
-    alignSelf: "flex-end",
+  top: {
+    flexGrow: 1,
+    flexShrink: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+  },
+  center: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "center",
     alignItems: "center",
+    flexGrow: 0,
+    flexShrink: 0,
+    backgroundColor: "transparent",
   },
+  left: {
+    display: "flex",
+    flexGrow: 1,
+    flexShrink: 0,
+    backgroundColor: "red",
+  },
+  right: {
+    flexGrow: 1,
+    flexShrink: 0,
+    backgroundColor: "red",
+  },
+  bottom: {
+    flexGrow: 1,
+    flexShrink: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+  },
+  qrCamera: {
+    width: FRAME_SIZE,
+    height: FRAME_SIZE,
+    borderWidth: 2,
+    borderColor: "#00FF00",
+    backgroundColor: "transparent",
+  },
+  buttonContainer: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "transparent",
+  },
+  button: {},
   text: {
     fontSize: 24,
     fontWeight: "bold",
     color: "white",
   },
 });
-
-// export default function HomeScreen() {
-//   return (
-//     <ParallaxScrollView
-//       headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-//       headerImage={
-//         <Image
-//           source={require('@/assets/images/partial-react-logo.png')}
-//           style={styles.reactLogo}
-//         />
-//       }>
-//       <ThemedView style={styles.titleContainer}>
-//         <ThemedText type="title">Welcome!</ThemedText>
-//         <HelloWave />
-//       </ThemedView>
-//       <ThemedView style={styles.stepContainer}>
-//         <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-//         <ThemedText>
-//           Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-//           Press{' '}
-//           <ThemedText type="defaultSemiBold">
-//             {Platform.select({
-//               ios: 'cmd + d',
-//               android: 'cmd + m',
-//               web: 'F12'
-//             })}
-//           </ThemedText>{' '}
-//           to open developer tools.
-//         </ThemedText>
-//       </ThemedView>
-//       <ThemedView style={styles.stepContainer}>
-//         <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-//         <ThemedText>
-//           Tap the Explore tab to learn more about what's included in this starter app.
-//         </ThemedText>
-//       </ThemedView>
-//       <ThemedView style={styles.stepContainer}>
-//         <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-//         <ThemedText>
-//           When you're ready, run{' '}
-//           <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-//           <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-//           <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-//           <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-//         </ThemedText>
-//       </ThemedView>
-//     </ParallaxScrollView>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   titleContainer: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     gap: 8,
-//   },
-//   stepContainer: {
-//     gap: 8,
-//     marginBottom: 8,
-//   },
-//   reactLogo: {
-//     height: 178,
-//     width: 290,
-//     bottom: 0,
-//     left: 0,
-//     position: 'absolute',
-//   },
-// });
