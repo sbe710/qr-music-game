@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   View,
   Dimensions,
+  Image,
 } from "react-native";
 import axios from "axios";
 import { ThemedView } from "@/components/ThemedView";
@@ -24,6 +25,12 @@ export default function HomeScreen() {
   const [scanned, setScanned] = useState(false);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any>();
+  //     {
+  //   title: "Bouncing Joy",
+  //   year: "2013",
+  //   artist: "BlenderTimer",
+  //   mp3: "test",
+  // }
   const [permission, requestPermission] = useCameraPermissions();
 
   if (!permission) {
@@ -116,16 +123,34 @@ export default function HomeScreen() {
         <ThemedView>
           {data ? (
             <ThemedView>
-              <ThemedText type="title">Title: {data.title}</ThemedText>
-              <ThemedText type="title">Artist: {data.artist}</ThemedText>
-              <ThemedText type="title">Year: {data.year}</ThemedText>
+              <Image
+                style={styles.albumCover}
+                source={{
+                  uri: "https://reactnative.dev/img/tiny_logo.png",
+                }}
+              />
+              <ThemedText type="subtitle">Title: {data.title}</ThemedText>
+              <ThemedText type="subtitle">Artist: {data.artist}</ThemedText>
+              <ThemedText type="subtitle">Year: {data.year}</ThemedText>
 
               <ThemedView>
-                <Button
-                  title={loading ? "Loading..." : "Play Audio"}
+                <TouchableOpacity
+                  style={styles.button}
                   onPress={() => playAudioFromBase64(data.mp3)}
                   disabled={loading}
-                />
+                >
+                  <Text style={styles.text}>
+                    {loading ? "Loading..." : "Play Audio"}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.button}
+                  onPress={() => sound?.pauseAsync()}
+                  disabled={loading}
+                >
+                  <Text style={styles.text}>Пауза</Text>
+                </TouchableOpacity>
               </ThemedView>
             </ThemedView>
           ) : null}
@@ -295,5 +320,9 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     color: "white",
+  },
+  albumCover: {
+    width: width,
+    height: width,
   },
 });
