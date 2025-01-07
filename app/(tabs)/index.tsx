@@ -1,36 +1,18 @@
-import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
+import { useCameraPermissions } from "expo-camera";
 import { useState } from "react";
-import {
-  Button,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  Dimensions,
-  Image,
-} from "react-native";
+import { Button, StyleSheet, Text, View } from "react-native";
 import axios from "axios";
 import { ThemedView } from "@/components/ThemedView";
-import { ThemedText } from "@/components/ThemedText";
-import * as FileSystem from "expo-file-system";
-import { Audio } from "expo-av";
-
-const { width } = Dimensions.get("window");
-const FRAME_SIZE = 200; // Размер центральной рамки
+import { MusicPlayer } from "@/components/MusicPlayer";
+import { QRCamera } from "@/components/QRCamera";
+import { Track } from "@/types/Track";
 
 export default function HomeScreen() {
-  const [facing, setFacing] = useState<CameraType>("back");
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [cameraEnabled, setCameraEnabled] = useState(false);
   const [scanned, setScanned] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<any>();
-  //     {
-  //   title: "Bouncing Joy",
-  //   year: "2013",
-  //   artist: "BlenderTimer",
-  //   mp3: "test",
-  // }
+  const [data, setData] = useState<Track | null>();
+
   const [permission, requestPermission] = useCameraPermissions();
 
   if (!permission) {
@@ -48,10 +30,6 @@ export default function HomeScreen() {
         <Button onPress={requestPermission} title="grant permission" />
       </View>
     );
-  }
-
-  function toggleCameraFacing() {
-    setFacing((current) => (current === "back" ? "front" : "back"));
   }
 
   const handleBarCodeScanned = async ({
@@ -84,76 +62,11 @@ export default function HomeScreen() {
     }
   };
 
-  const playAudioFromBase64 = async (base64: string) => {
-    setLoading(true);
-    try {
-      // Создаём временный путь для сохранения аудио файла
-      const fileUri = FileSystem.documentDirectory + "audio.mp3";
-
-      // Сохраняем base64 данные в файл
-      await FileSystem.writeAsStringAsync(fileUri, base64, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-
-      // Загружаем и воспроизводим аудиофайл
-      const { sound } = await Audio.Sound.createAsync(
-        { uri: fileUri },
-        { shouldPlay: true },
-      );
-      setSound(sound);
-
-      // После воспроизведения аудио
-      sound.setOnPlaybackStatusUpdate((status) => {
-        // @ts-ignore
-        if (status.didJustFinish) {
-          console.log("Audio finished");
-          setSound(null);
-        }
-      });
-    } catch (error) {
-      console.error("Error playing audio:", error);
-      alert("Failed to play audio from base64.");
-    } finally {
-      setLoading(false);
-    }
-  };
   return (
     <ThemedView style={styles.container}>
       {!cameraEnabled ? (
         <ThemedView>
-          {data ? (
-            <ThemedView>
-              <Image
-                style={styles.albumCover}
-                source={{
-                  uri: "https://reactnative.dev/img/tiny_logo.png",
-                }}
-              />
-              <ThemedText type="subtitle">Title: {data.title}</ThemedText>
-              <ThemedText type="subtitle">Artist: {data.artist}</ThemedText>
-              <ThemedText type="subtitle">Year: {data.year}</ThemedText>
-
-              <ThemedView>
-                <TouchableOpacity
-                  style={styles.button}
-                  onPress={() => playAudioFromBase64(data.mp3)}
-                  disabled={loading}
-                >
-                  <Text style={styles.text}>
-                    {loading ? "Loading..." : "Play Audio"}
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.button}
-                  onPress={() => sound?.pauseAsync()}
-                  disabled={loading}
-                >
-                  <Text style={styles.text}>Пауза</Text>
-                </TouchableOpacity>
-              </ThemedView>
-            </ThemedView>
-          ) : null}
+          {data ? <MusicPlayer track={data} /> : null}
 
           <ThemedView>
             <Button
@@ -167,42 +80,10 @@ export default function HomeScreen() {
           </ThemedView>
         </ThemedView>
       ) : (
-        <CameraView
-          style={styles.camera}
-          facing={facing}
+        <QRCamera
+          onCameraClose={() => setCameraEnabled(false)}
           onBarcodeScanned={handleBarCodeScanned}
-          ratio={"1:1"}
-          barcodeScannerSettings={{
-            barcodeTypes: ["qr"],
-          }}
-        >
-          <ThemedView style={styles.innerCamera}>
-            <ThemedView style={styles.top}></ThemedView>
-            <ThemedView style={styles.center}>
-              <ThemedView style={styles.left}></ThemedView>
-              <ThemedView style={styles.qrFrame}>
-                <ThemedView style={styles.qrCornerTopLeft}></ThemedView>
-                <ThemedView style={styles.qrCornerTopRight}></ThemedView>
-                <ThemedView style={styles.qrCornerBottomLeft}></ThemedView>
-                <ThemedView style={styles.qrCornerBottomRight}></ThemedView>
-              </ThemedView>
-              <ThemedView style={styles.right}></ThemedView>
-            </ThemedView>
-            <ThemedView style={styles.bottom}>
-              <ThemedView style={styles.buttonContainer}>
-                <Button
-                  title={"Переключить камеру"}
-                  onPress={() => toggleCameraFacing()}
-                />
-
-                <Button
-                  title={"Закрыть"}
-                  onPress={() => setCameraEnabled(false)}
-                />
-              </ThemedView>
-            </ThemedView>
-          </ThemedView>
-        </CameraView>
+        />
       )}
     </ThemedView>
   );
@@ -217,112 +98,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingBottom: 10,
   },
-  camera: {
-    flex: 1,
-  },
-  innerCamera: {
-    flex: 1,
-    height: "100%",
-    backgroundColor: "transparent",
-  },
-  top: {
-    flexGrow: 1,
-    flexShrink: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-  },
-  center: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    flexGrow: 0,
-    flexShrink: 0,
-    backgroundColor: "transparent",
-  },
-  left: {
-    display: "flex",
-    flexGrow: 1,
-    flexShrink: 0,
-  },
-  right: {
-    flexGrow: 1,
-    flexShrink: 0,
-  },
-  bottom: {
-    flexGrow: 1,
-    flexShrink: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-  },
-  qrFrame: {
-    width: FRAME_SIZE,
-    height: FRAME_SIZE,
-    backgroundColor: "transparent",
-    borderColor: "rgba(255, 255, 255, 0.6)",
-    position: "relative",
-  },
-  qrCornerTopLeft: {
-    position: "absolute",
-    width: 30,
-    height: 30,
-    borderTopWidth: 4,
-    borderLeftWidth: 4,
-    borderColor: "white",
-    top: 0,
-    left: 0,
-    backgroundColor: "transparent",
-    borderRadius: 5,
-  },
-  qrCornerTopRight: {
-    position: "absolute",
-    width: 30,
-    height: 30,
-    borderTopWidth: 4,
-    borderRightWidth: 4,
-    borderColor: "white",
-    top: 0,
-    right: 0,
-    backgroundColor: "transparent",
-    borderRadius: 5,
-  },
-  qrCornerBottomLeft: {
-    position: "absolute",
-    width: 30,
-    height: 30,
-    borderBottomWidth: 4,
-    borderLeftWidth: 4,
-    borderColor: "white",
-    bottom: 0,
-    left: 0,
-    backgroundColor: "transparent",
-    borderRadius: 5,
-  },
-  qrCornerBottomRight: {
-    position: "absolute",
-    width: 30,
-    height: 30,
-    borderBottomWidth: 4,
-    borderRightWidth: 4,
-    borderColor: "white",
-    bottom: 0,
-    right: 0,
-    backgroundColor: "transparent",
-    borderRadius: 5,
-  },
-  buttonContainer: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "transparent",
-  },
-  button: {},
   text: {
     fontSize: 24,
     fontWeight: "bold",
     color: "white",
-  },
-  albumCover: {
-    width: width,
-    height: width,
   },
 });
