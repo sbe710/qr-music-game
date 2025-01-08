@@ -1,11 +1,12 @@
 import { useCameraPermissions } from "expo-camera";
-import { useState } from "react";
-import { Button, StyleSheet, Text, View } from "react-native";
+import React, { useState } from "react";
+import { Button, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import axios from "axios";
 import { ThemedView } from "@/components/ThemedView";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { QRCamera } from "@/components/QRCamera";
 import { Track } from "@/types/Track";
+import Icon from "react-native-vector-icons/Ionicons";
 
 export default function HomeScreen() {
   const [cameraEnabled, setCameraEnabled] = useState(false);
@@ -66,14 +67,16 @@ export default function HomeScreen() {
           {data ? <MusicPlayer track={data} /> : null}
 
           <ThemedView>
-            <Button
-              title="Сканировать QR-код"
+            <TouchableOpacity
               onPress={() => {
                 setData(null);
                 setCameraEnabled(true);
               }}
-              color={"#7F00FF"}
-            />
+              style={styles.scanQRButton}
+            >
+              <Icon name={"qr-code-sharp"} size={30} color="#7F00FF" />
+              <Text style={styles.scanQRButtonText}>Сканировать QR-код</Text>
+            </TouchableOpacity>
           </ThemedView>
         </ThemedView>
       ) : (
@@ -96,8 +99,23 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   text: {
-    fontSize: 24,
+    fontSize: 16,
     fontWeight: "bold",
     color: "white",
+  },
+  scanQRButton: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 5,
+    borderWidth: 4,
+    borderColor: "#7F00FF",
+    padding: 10,
+    margin: 20,
+    borderRadius: 10,
+  },
+  scanQRButtonText: {
+    color: "#7F00FF",
   },
 });

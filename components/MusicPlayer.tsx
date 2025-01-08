@@ -165,9 +165,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flexDirection: "row",
     gap: 5,
-    backgroundColor: "#6f14b8",
+    backgroundColor: "#7F00FF",
     padding: 10,
-    borderRadius: 5,
+    borderRadius: 10,
   },
   cover: {
     width: 150,
