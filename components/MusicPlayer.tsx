@@ -1,62 +1,93 @@
-import React, { useState } from "react";
+// @ts-nocheck
+import React, { useState, useEffect } from "react";
 import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
-import Icon from "react-native-vector-icons/Ionicons";
-import { Track } from "@/types/Track";
+import Slider from "@react-native-community/slider"; // Убедитесь, что вы установили эту библиотеку
+import Icon from "react-native-vector-icons/Ionicons"; // Убедитесь, что вы установили react-native-vector-icons
+import { Audio } from "expo-av";
 import * as FileSystem from "expo-file-system";
-import { Audio } from "expo-av"; // Убедитесь, что вы установили react-native-vector-icons
 
-type MusicPlayerProps = {
-  track: Track;
-};
-export const MusicPlayer: React.FC<MusicPlayerProps> = ({ track }) => {
+export const MusicPlayer = ({ track }) => {
   const { artist, title, year, mp3 } = track;
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(200); // Общая продолжительность песни в секундах
+
   const [loading, setLoading] = useState(false);
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [sound, setSound] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const togglePlayPause = () => {
-    setIsPlaying(!isPlaying);
-
-    playAudioFromBase64(mp3);
-  };
-
-  const playAudioFromBase64 = async (base64: string) => {
-    if (sound) {
-      return isPlaying ? sound.pauseAsync() : sound.playAsync();
-    }
-
-    if (!sound) {
-      setLoading(true);
-      try {
-        // Создаём временный путь для сохранения аудио файла
-        const fileUri = FileSystem.documentDirectory + "audio.mp3";
-
-        // Сохраняем base64 данные в файл
-        await FileSystem.writeAsStringAsync(fileUri, base64, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
-
-        // Загружаем и воспроизводим аудиофайл
-        const { sound } = await Audio.Sound.createAsync(
-          { uri: fileUri },
-          { shouldPlay: true },
-        );
-        setSound(sound);
-
-        // После воспроизведения аудио
-        sound.setOnPlaybackStatusUpdate((status) => {
-          // @ts-ignore
-          if (status.didJustFinish) {
-            console.log("Audio finished");
-            setSound(null);
+  useEffect(() => {
+    let interval;
+    if (isPlaying) {
+      interval = setInterval(() => {
+        setCurrentTime((prevTime) => {
+          if (prevTime < duration) {
+            return prevTime + 1;
+          } else {
+            clearInterval(interval);
+            setIsPlaying(false);
+            return prevTime;
           }
         });
-      } catch (error) {
-        console.error("Error playing audio:", error);
-        alert("Failed to play audio from base64.");
-      } finally {
-        setLoading(false);
+      }, 1000);
+    } else {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying, currentTime, duration]);
+
+  const formatTime = (time) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = time % 60;
+    return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+  };
+
+  const togglePlayPause = () => {
+    if (loading) return;
+
+    if (sound) {
+      if (isPlaying) {
+        sound.pauseAsync();
+        setIsPlaying(false);
+      } else {
+        sound.playAsync();
+        setIsPlaying(true);
       }
+    } else {
+      playAudioFromBase64(mp3);
+    }
+  };
+
+  const playAudioFromBase64 = async (base64) => {
+    setLoading(true);
+    try {
+      const fileUri = FileSystem.documentDirectory + "audio.mp3";
+      await FileSystem.writeAsStringAsync(fileUri, base64, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      const { sound: newSound, status } = await Audio.Sound.createAsync(
+        { uri: fileUri },
+        { shouldPlay: true },
+        (playbackStatus) => {
+          if (playbackStatus.isLoaded) {
+            setCurrentTime(Math.floor(playbackStatus.positionMillis / 1000));
+            setDuration(Math.floor(playbackStatus.durationMillis / 1000));
+
+            if (playbackStatus.didJustFinish) {
+              setIsPlaying(false);
+              setSound(null);
+            }
+          }
+        },
+      );
+
+      setSound(newSound);
+      setIsPlaying(true);
+    } catch (error) {
+      console.error("Error playing audio:", error);
+      alert("Failed to play audio from base64.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -69,6 +100,27 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({ track }) => {
       <Text style={styles.songTitle}>{title}</Text>
       <Text style={styles.artist}>{artist}</Text>
       <Text style={styles.year}>{year}</Text>
+
+      <Slider
+        style={styles.slider}
+        minimumValue={0}
+        maximumValue={duration}
+        value={currentTime}
+        onSlidingComplete={(value) => {
+          if (sound) {
+            sound.setPositionAsync(value * 1000);
+            setCurrentTime(value);
+          }
+        }}
+        minimumTrackTintColor="#1DB954"
+        maximumTrackTintColor="#ccc"
+        thumbTintColor="#1DB954"
+      />
+      <View style={styles.timeContainer}>
+        <Text style={styles.time}>{formatTime(currentTime)}</Text>
+        <Text style={styles.time}>{formatTime(duration)}</Text>
+      </View>
+
       <TouchableOpacity
         onPress={togglePlayPause}
         style={styles.playPauseButton}
@@ -109,12 +161,28 @@ const styles = StyleSheet.create({
   artist: {
     fontSize: 16,
     color: "#aaa",
-    marginBottom: 50,
+    marginBottom: 20,
   },
   year: {
-    fontSize: 16,
-    color: "#aaa",
+    fontSize: 14,
+    color: "#888",
     marginBottom: 20,
+  },
+  slider: {
+    width: "100%",
+    height: 40,
+    marginBottom: 10,
+  },
+  timeContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    paddingHorizontal: 10,
+    marginBottom: 20,
+  },
+  time: {
+    color: "#fff",
+    fontSize: 14,
   },
   playPauseButton: {
     width: 60,
