@@ -7,6 +7,7 @@ import { Audio } from "expo-av";
 import * as FileSystem from "expo-file-system";
 
 export const MusicPlayer = ({ track }) => {
+  const [isTrackHidden, setIsTrackHidden] = useState(true);
   const { artist, title, year, mp3 } = track;
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(200); // Общая продолжительность песни в секундах
@@ -93,13 +94,25 @@ export const MusicPlayer = ({ track }) => {
 
   return (
     <View style={styles.container}>
-      <Image
-        source={{ uri: "https://via.placeholder.com/150" }} // Замените на URL вашей обложки
-        style={styles.cover}
-      />
-      <Text style={styles.songTitle}>{title}</Text>
-      <Text style={styles.artist}>{artist}</Text>
-      <Text style={styles.year}>{year}</Text>
+      {isTrackHidden ? (
+        <TouchableOpacity
+          onPress={() => setIsTrackHidden(false)}
+          style={styles.revealButton}
+        >
+          <Icon name={"eye"} size={30} color="#fff" />
+          <Text style={styles.songTitle}>Показать трек</Text>
+        </TouchableOpacity>
+      ) : (
+        <View>
+          <Image
+            source={{ uri: "https://via.placeholder.com/150" }} // Замените на URL вашей обложки
+            style={styles.cover}
+          />
+          <Text style={styles.songTitle}>{title}</Text>
+          <Text style={styles.artist}>{artist}</Text>
+          <Text style={styles.year}>{year}</Text>
+        </View>
+      )}
 
       <Slider
         style={styles.slider}
@@ -145,6 +158,16 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 5,
+  },
+  revealButton: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 5,
+    backgroundColor: "#6f14b8",
+    padding: 10,
+    borderRadius: 5,
   },
   cover: {
     width: 150,
