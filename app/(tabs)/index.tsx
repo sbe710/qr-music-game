@@ -9,7 +9,6 @@ import { Track } from "@/types/Track";
 
 export default function HomeScreen() {
   const [cameraEnabled, setCameraEnabled] = useState(false);
-  const [scanned, setScanned] = useState(false);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<Track | null>();
 
@@ -40,9 +39,6 @@ export default function HomeScreen() {
     data: string;
   }) => {
     setCameraEnabled(false);
-    if (scanned) return; // Если сканирование уже произошло, не выполняем запрос
-    setScanned(true); // Блокируем дальнейшие сканирования
-
     // Показать сообщение о том, что QR-код отсканирован
     alert(`QR Code scanned! Data: ${data}`);
 
@@ -58,6 +54,7 @@ export default function HomeScreen() {
       console.error("Error fetching data:", error);
       alert("Failed to fetch data from URL.");
     } finally {
+      setCameraEnabled(false);
       setLoading(false); // Снимаем состояние загрузки после запроса
     }
   };

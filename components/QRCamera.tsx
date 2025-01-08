@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { CameraType, CameraView } from "expo-camera";
 import { ThemedView } from "@/components/ThemedView";
 import { Button, StyleSheet } from "react-native";
+import throttle from "lodash/throttle";
 
 type QRCameraProps = {
   onBarcodeScanned: any;
@@ -17,11 +18,16 @@ export const QRCamera: React.FC<QRCameraProps> = ({
   function toggleCameraFacing() {
     setFacing((current) => (current === "back" ? "front" : "back"));
   }
+
+  const onBarcodeScannedProxy = throttle((barcode) => {
+    onBarcodeScanned(barcode);
+    // Здесь можно обработать результат сканирования
+  }, 2000);
   return (
     <CameraView
       style={styles.camera}
       facing={facing}
-      onBarcodeScanned={onBarcodeScanned}
+      onBarcodeScanned={onBarcodeScannedProxy}
       ratio={"1:1"}
       barcodeScannerSettings={{
         barcodeTypes: ["qr"],
