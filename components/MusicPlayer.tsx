@@ -6,7 +6,7 @@ import Icon from "react-native-vector-icons/Ionicons"; // Убедитесь, ч
 import { Audio } from "expo-av";
 import * as FileSystem from "expo-file-system";
 
-export const MusicPlayer = ({ track }) => {
+export const MusicPlayer = ({ track, onTogglePlayPause }) => {
   const [isTrackHidden, setIsTrackHidden] = useState(true);
   const { artist, title, year, mp3 } = track;
   const [currentTime, setCurrentTime] = useState(0);
@@ -43,19 +43,20 @@ export const MusicPlayer = ({ track }) => {
   };
 
   const togglePlayPause = () => {
-    if (loading) return;
-
-    if (sound) {
-      if (isPlaying) {
-        sound.pauseAsync();
-        setIsPlaying(false);
-      } else {
-        sound.playAsync();
-        setIsPlaying(true);
-      }
-    } else {
-      playAudioFromBase64(mp3);
-    }
+    // if (loading) return;
+    //
+    // if (sound) {
+    //   if (isPlaying) {
+    //     sound.pauseAsync();
+    //     setIsPlaying(false);
+    //   } else {
+    //     sound.playAsync();
+    //     setIsPlaying(true);
+    //   }
+    // } else {
+    //   playAudioFromBase64(mp3);
+    // }
+    onTogglePlayPause();
   };
 
   const playAudioFromBase64 = async (base64) => {
