@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
   top: {
     flexGrow: 1,
     flexShrink: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    backgroundColor: "transparent",
   },
   center: {
     display: "flex",
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
   bottom: {
     flexGrow: 1,
     flexShrink: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    backgroundColor: "transparent",
   },
   qrFrame: {
     width: FRAME_SIZE,
